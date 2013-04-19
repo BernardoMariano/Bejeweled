@@ -17,13 +17,27 @@ const ELEM_MARGIN = 15; // pixels
 const GRID_COL = (COL_MAX * ELEM_MARGIN) + (COL_MAX * ELEM_SIZE) + ELEM_MARGIN;
 const GRID_ROW = (ROW_MAX * ELEM_MARGIN) + (ROW_MAX * ELEM_SIZE) + ELEM_MARGIN;
 
+const COLORS = ['red', 'green', 'blue', 'yellow', 'gray'];
+
 const FALL_SPEED = 300;
 
 $(function(){
     //'use strict';
-    Elem = function (dom, color) {
-        this.dom   = dom; 
+    Elem = function (color) {
+        this.dom   = this.createDomElem(color);
         this.color = color;
+    }
+
+    Elem.prototype.createDomElem = function (color) {
+        return $('<div class="'+ COLORS[color] +'"></div>');
+    }
+
+    Elem.prototype.appendToGrid = function (col, row) {
+        this.dom.css({
+            left: (col - 1) * ELEM_SIZE + (col * ELEM_MARGIN),
+            top: (row - 1) * ELEM_SIZE + (row * ELEM_MARGIN)
+        });
+        this.dom.appendTo($(GRID));
     }
 
     Elem.prototype.pop = function (col, row) {
@@ -44,11 +58,14 @@ $(function(){
         this.dom.animate({
             top: ['+='+ (ELEM_SIZE + ELEM_MARGIN) * count +'px', 'easeOutBounce']
         }, FALL_SPEED * 3);
+
+        setTimeout(function () {
+            Bejeweled._checkEntireGrid();
+        }, FALL_SPEED * 3);
     }
 
     Bejeweled = {
         init: function () {
-            this.colors = ['', 'red', 'green', 'blue', 'yellow', 'gray'];
             this.grid   = [];
 
             this.prepareElems();
@@ -61,15 +78,14 @@ $(function(){
             for (var col = 1; col <= COL_MAX; col++) {
                 this.grid[col] = [];
                 for (var row = 1; row <= ROW_MAX; row++) {
-                    var color = this.randomColor(),
-                        dom = this.createDomElem(color);
+                    var color = this.randomColor();
 
                     if ((col >= 3 && this._rowHasEquals(color, col, row)) ||
                         (row >= 3 && this._colHasEquals(color, col, row))) {
                         row--;
                     } else {
-                        this.grid[col][row] = new Elem(dom, color);
-                        this.appendToGrid(dom, col, row);
+                        this.grid[col][row] = new Elem(color);
+                        this.getElem(col, row).appendToGrid(col, row);
                     }
                 }
             }
@@ -80,17 +96,18 @@ $(function(){
         },
 
         prepareOneElem: function (col, row, order) {
-            var color = this.randomColor(),
-                dom = this.createDomElem(color);
+            var color = this.randomColor()
 
-            this.grid[col][row] = new Elem(dom, color);
-            dom.css({
-                width: ELEM_SIZE,
-                height: ELEM_SIZE,
-                left: (col - 1) * ELEM_SIZE + (col * ELEM_MARGIN),
-                top: order * (ELEM_SIZE + ELEM_MARGIN) * -1 + ELEM_MARGIN
-            });
-            dom.appendTo($(GRID));
+            this.grid[col][row] = new Elem(color);
+
+            this.getElem(col, row).dom.css (
+                {
+                    width: ELEM_SIZE,
+                    height: ELEM_SIZE,
+                    left: (col - 1) * ELEM_SIZE + (col * ELEM_MARGIN),
+                    top: order * (ELEM_SIZE + ELEM_MARGIN) * -1 + ELEM_MARGIN
+                }
+            ).appendTo($(GRID));
         },
 
         createGrid: function () {
@@ -101,19 +118,7 @@ $(function(){
         },
 
         randomColor: function () {
-            return Math.floor(Math.random() * this.colors.length) || this.randomColor();
-        },
-
-        createDomElem: function (color) {
-            return $('<div class="'+ this.colors[color] +'"></div>');
-        },
-        
-        appendToGrid: function (dom, col, row) {
-            dom.css({
-                left: (col - 1) * ELEM_SIZE + (col * ELEM_MARGIN),
-                top: (row - 1) * ELEM_SIZE + (row * ELEM_MARGIN)
-            });
-            dom.appendTo($(GRID));
+            return Math.floor(Math.random() * COLORS.length);
         },
         
         getElem: function (col, row) {
