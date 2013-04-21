@@ -4,9 +4,13 @@
 }
 #grid div {
     position: absolute;
+    border-radius: 17px;
+}
+#grid div.selected {
+    border: 2px solid #000000;
 }
 #grid div.red {
-    background: red;
+    background: #EE0000;
 }
 #grid div.green {
     background: green;
@@ -18,5 +22,8 @@
     background: yellow;
 }
 #grid div.gray {
-    background: gray;
+    background: #888888;
+}
+#grid div.orange {
+    background: #FF9900;
 }

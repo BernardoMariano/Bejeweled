@@ -11,13 +11,13 @@ const ROW_MAX = 9;
 const GRID = '#grid';
 
 const ELEMS = GRID + ' div';
-const ELEM_SIZE = 30; //pixels
-const ELEM_MARGIN = 7; // pixels
+const ELEM_SIZE = 35; //pixels
+const ELEM_MARGIN = 4; // pixels
 
 const GRID_COL = (COL_MAX * ELEM_MARGIN) + (COL_MAX * ELEM_SIZE) + ELEM_MARGIN;
 const GRID_ROW = (ROW_MAX * ELEM_MARGIN) + (ROW_MAX * ELEM_SIZE) + ELEM_MARGIN;
 
-const COLORS = ['red', 'green', 'blue', 'yellow', 'gray'];
+const COLORS = ['red', 'green', 'blue', 'yellow', 'gray', 'orange'];
 
 const FALL_SPEED = 300;
 
@@ -29,7 +29,7 @@ $(function(){
     }
 
     Elem.prototype.createDomElem = function (color, col, row) {
-        return $('<div class="'+ COLORS[color] +'"> '+col+','+row+' </div>');
+        return $('<div class="'+ COLORS[color] +'"></div>');
     }
 
     Elem.prototype.appendToGrid = function (col, row) {
@@ -70,11 +70,14 @@ $(function(){
             this.prepareElems();
             this.createGrid();
 
+            this.selectedElem;
+
             var self = this;
-            setTimeout(function () {
-                self.popColumn(6,4,6);
-            }, 1000);
-            // this._checkEntireGrid();
+            $(document).on('click', ELEMS, function () {
+                $(this).addClass('selected').css({width:'-=4px', height:'-=4px'});
+                selectedElem = this;
+                alert(selectedElem.className);
+            });
         },
 
         prepareElems: function () {
@@ -99,6 +102,7 @@ $(function(){
         },
 
         prepareOneElem: function (col, row, order) {
+            order = order || 1;
             var color = this.randomColor();
 
             this.grid[col][row] = new Elem(color, col, row);
@@ -159,24 +163,25 @@ $(function(){
         },
 
         _checkEntireGrid: function () {
+            console.log('checking entire grid');
             this.getColsEquals();
-            //this.getRowEquals();
+            this.getRowsEquals();
         },
 
         getColsEquals: function () {
             var elem, elemColor, currentColor, count = 1, row_start, row_end;
-            for (var col = 1; col <= COL_MAX; col++) {
+            for (var col = 1; col <= COL_MAX+1; col++) {
                 if (count >= 3) {
                     row_end = ROW_MAX;
-                    console.log('Found equals on col '+(col-1)+', from row '+row_start+' to '+row_end);
+                    console.log('Found equals from previous col '+(col-1)+', from row '+row_start+' to '+row_end);
                     var self = this;
-                    self.popColumn(col, row_start, row_end);
+                    self.popColumn((col-1), row_start, row_end);
                 }
                 currentColor = -1;
                 count = 1;
                 for (var row = 1; row <= ROW_MAX; row++) {
-                    elem = this.getElem(col, row) || 0;
-                    elemColor = elem.color || -1;
+                    elem = col > COL_MAX ? 0 : this.getElem(col, row);
+                    elemColor = elem.color || -2;
                     if (elemColor == currentColor) {
                         if (count == 1) {
                             row_start = row - 1;
@@ -188,6 +193,39 @@ $(function(){
                             console.log('Found equals on col '+col+', from row '+row_start+' to '+row_end);
                             var self = this;
                             self.popColumn(col, row_start, row_end);
+                            row = ROW_MAX;
+                        }
+                        count = 1;
+                        currentColor = elemColor;
+                    }
+                }
+            }
+        },
+
+        getRowsEquals: function () {
+            var elem, elemColor, currentColor, count = 1, col_start, col_end;
+            for (var row = 1; row <= ROW_MAX+1; row++) {
+                if (count >= 3) {
+                    col_end = COL_MAX;
+                    console.log('Found equals from previous row '+(row-1)+', from col '+col_start+' to '+col_end);
+                    this.popRow((row-1), col_start, col_end);
+                }
+                currentColor = -1;
+                count = 1;
+                for (var col = 1; col <= COL_MAX; col++) {
+                    elem = row > ROW_MAX ? 0 : this.getElem(col, row);
+                    elemColor = elem.color || -2;
+                    if (elemColor == currentColor) {
+                        if (count == 1) {
+                            col_start = col - 1;
+                        }
+                        count++;
+                    } else {
+                        if (count >= 3) {
+                            col_end = col - 1;
+                            console.log('Found equals on row '+row+', from col '+col_start+' to '+col_end);
+                            this.popRow(row, col_start, col_end);
+                            col = COL_MAX;
                         }
                         count = 1;
                         currentColor = elemColor;
@@ -200,15 +238,41 @@ $(function(){
             this.grid[col][row] = elem;
         },
 
+        popRow: function (row, col_start, col_end) {
+            var self = this;
+            for (var col = col_start; col <= col_end; col++) {
+                this.getElem(col, row).pop(col, row);
+
+                for (var row_index = row-1; row_index >= 1; row_index--) {
+                    var elem = this.getElem(col, row_index);
+                    this.updatePosElem(elem, col, row_index+1);
+                    console.log('updating elem pos from '+col,row_index+' to '+col,row_index+1);
+                }
+
+                self.prepareOneElem(col, 1);
+                console.log('created '+col+' 1');
+                console.log('');
+                // console.log('falling elem on col '+col+', from '+(row_start-1)+' to 1...');
+                for (var row_index = row; row_index >= 1; row_index--) {
+                    self.getElem(col, row_index).fall();
+                }
+            }
+            setTimeout(function () {
+                // console.log('');
+                // console.log('reChecking entire grid...');
+                self._checkEntireGrid();
+            }, FALL_SPEED / 2 + FALL_SPEED * 3);
+        },
+
         popColumn: function (col, row_start, row_end) {
             var self = this,
                 count = 1 + row_end - row_start,
                 order = 1;
             for (var row = row_end; row >= row_start; row--) {
-                console.log('popping '+col,row);
+                // console.log('popping '+col,row);
                 this.getElem(col, row).pop(col, row);
             }
-            console.log('');
+            // console.log('');
             if (row_start == 1) {
                 for (var row = row_end; row >= 1; row--) {
                     self.prepareOneElem(col, row, order++);
@@ -217,18 +281,18 @@ $(function(){
                 for (var row = row_end-count; row >= 1; row--) {
                     var elem = this.getElem(col, row);
                     this.updatePosElem(elem, col, row+count);
-                    console.log('updating elem pos from '+col,row+' to '+col,row+count);
+                    // console.log('updating elem pos from '+col,row+' to '+col,row+count);
                 }
 
-                console.log('');
-                console.log('creating elem on col '+col+', from '+(row_start-1)+' to 1...');
+                // console.log('');
+                // console.log('creating elem on col '+col+', from '+(row_start-1)+' to 1...');
                 for (var row = count; row >= 1; row--) {
                     self.prepareOneElem(col, row, order++);
-                    console.log('created '+col, row);
+                    // console.log('created '+col, row);
                 }
             }
-            console.log('');
-            console.log('falling col '+col+', from row '+row_end+' to 1');
+            // console.log('');
+            // console.log('falling col '+col+', from row '+row_end+' to 1');
             this.fallColumn(col, row_end, count);
         },
 
@@ -239,8 +303,8 @@ $(function(){
                     self.getElem(col, row).fall(count);
                 }
                 setTimeout(function () {
-                    console.log('');
-                    console.log('reChecking entire grid...');
+                    // console.log('');
+                    // console.log('reChecking entire grid...');
                     self._checkEntireGrid();
                 }, FALL_SPEED * 3);
             }, FALL_SPEED / 2);
