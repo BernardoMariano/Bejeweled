@@ -1,0 +1,22 @@
+#grid {
+    position: relative;
+    border: solid 1px #000;
+}
+#grid div {
+    position: absolute;
+}
+#grid div.red {
+    background: red;
+}
+#grid div.green {
+    background: green;
+}
+#grid div.blue {
+    background: blue;
+}
+#grid div.yellow {
+    background: yellow;
+}
+#grid div.gray {
+    background: gray;
+}
