@@ -4,7 +4,6 @@
 }
 #grid div {
     position: absolute;
-    border-radius: 17px;
 }
 #grid div.selected {
     border: 2px solid #000000;

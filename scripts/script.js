@@ -12,7 +12,7 @@ const GRID = '#grid';
 
 const ELEMS = GRID + ' div';
 const ELEM_SIZE = 35; //pixels
-const ELEM_MARGIN = 4; // pixels
+const ELEM_MARGIN = 5; // pixels
 
 const GRID_COL = (COL_MAX * ELEM_MARGIN) + (COL_MAX * ELEM_SIZE) + ELEM_MARGIN;
 const GRID_ROW = (ROW_MAX * ELEM_MARGIN) + (ROW_MAX * ELEM_SIZE) + ELEM_MARGIN;
@@ -73,11 +73,47 @@ $(function(){
             this.selectedElem;
 
             var self = this;
+            var selectedElemPos,
+                nextElemPos;
             $(document).on('click', ELEMS, function () {
-                $(this).addClass('selected').css({width:'-=4px', height:'-=4px'});
-                selectedElem = this;
-                alert(selectedElem.className);
+                selectedCount = $('.selected').length;
+                if (selectedCount > 0) {
+                    nextElemPos = self.findElemByDom(this);
+                    var selectedCol = selectedElemPos[0],
+                        selectedRow = selectedElemPos[1],
+                        nextCol = nextElemPos[0],
+                        nextRow = nextElemPos[1];
+
+                    if (selectedRow - nextRow === 0) {
+                        if (selectedCol - nextCol === 1) {
+                            console.log('tá do lado esquerdo');
+                            // self.swipe(0, )
+                        } else if (selectedCol - nextCol === -1) {
+                            console.log('tá do lado direito');
+                        }
+                    } else if (selectedCol - nextCol === 0) {
+                        if (selectedRow - nextRow === 1) {
+                            console.log('tá em cima');
+                        } else if (selectedRow - nextRow === -1) {
+                            console.log('tá embaixo');
+                        }
+                    }
+                    $(ELEMS).removeClass('selected');
+                } else {
+                    $(this).addClass('selected');
+                    selectedElemPos = self.findElemByDom(this);
+                }
             });
+        },
+
+        findElemByDom: function (dom) {
+            for (var col = 1; col <= COL_MAX; col++) {
+                for (var row = 1; row <= ROW_MAX; row++) {
+                    if (dom == this.getElem(col, row).dom[0]) {
+                        return [col, row];
+                    }
+                }
+            }
         },
 
         prepareElems: function () {
@@ -163,19 +199,21 @@ $(function(){
         },
 
         _checkEntireGrid: function () {
-            console.log('checking entire grid');
-            this.getColsEquals();
-            this.getRowsEquals();
+            // console.log('checking entire grid');
+            if (this.getColsEquals() || this.getRowsEquals())
+                return true;
+            return false;
         },
 
         getColsEquals: function () {
-            var elem, elemColor, currentColor, count = 1, row_start, row_end;
+            var elem, elemColor, currentColor, count = 1, row_start, row_end, found = false;
             for (var col = 1; col <= COL_MAX+1; col++) {
                 if (count >= 3) {
                     row_end = ROW_MAX;
                     console.log('Found equals from previous col '+(col-1)+', from row '+row_start+' to '+row_end);
                     var self = this;
                     self.popColumn((col-1), row_start, row_end);
+                    found = true;
                 }
                 currentColor = -1;
                 count = 1;
@@ -194,21 +232,26 @@ $(function(){
                             var self = this;
                             self.popColumn(col, row_start, row_end);
                             row = ROW_MAX;
+                            found = true;
                         }
                         count = 1;
                         currentColor = elemColor;
                     }
                 }
             }
+            if (found)
+                return true;
+            return false;
         },
 
         getRowsEquals: function () {
-            var elem, elemColor, currentColor, count = 1, col_start, col_end;
+            var elem, elemColor, currentColor, count = 1, col_start, col_end, found = false;
             for (var row = 1; row <= ROW_MAX+1; row++) {
                 if (count >= 3) {
                     col_end = COL_MAX;
                     console.log('Found equals from previous row '+(row-1)+', from col '+col_start+' to '+col_end);
                     this.popRow((row-1), col_start, col_end);
+                    found = true;
                 }
                 currentColor = -1;
                 count = 1;
@@ -226,12 +269,16 @@ $(function(){
                             console.log('Found equals on row '+row+', from col '+col_start+' to '+col_end);
                             this.popRow(row, col_start, col_end);
                             col = COL_MAX;
+                            found = true;
                         }
                         count = 1;
                         currentColor = elemColor;
                     }
                 }
             }
+            if (found)
+                return true;
+            return false;
         },
 
         updatePosElem: function (elem, col, row) {
