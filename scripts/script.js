@@ -74,36 +74,78 @@ $(function(){
 
             var self = this;
             var selectedElemPos,
-                nextElemPos;
+                targetElemPos;
             $(document).on('click', ELEMS, function () {
                 selectedCount = $('.selected').length;
                 if (selectedCount > 0) {
-                    nextElemPos = self.findElemByDom(this);
+                    targetElemPos = self.findElemByDom(this);
                     var selectedCol = selectedElemPos[0],
                         selectedRow = selectedElemPos[1],
-                        nextCol = nextElemPos[0],
-                        nextRow = nextElemPos[1];
+                        targetCol = targetElemPos[0],
+                        targetRow = targetElemPos[1];
 
-                    if (selectedRow - nextRow === 0) {
-                        if (selectedCol - nextCol === 1) {
+                    if (selectedRow - targetRow === 0) {
+                        if (selectedCol - targetCol === 1) {
                             console.log('tá do lado esquerdo');
-                            // self.swipe(0, )
-                        } else if (selectedCol - nextCol === -1) {
+                            self.swap('left', selectedElemPos, targetElemPos);
+                        } else if (selectedCol - targetCol === -1) {
                             console.log('tá do lado direito');
+                            self.swap('right', selectedElemPos, targetElemPos);
                         }
-                    } else if (selectedCol - nextCol === 0) {
-                        if (selectedRow - nextRow === 1) {
+                    } else if (selectedCol - targetCol === 0) {
+                        if (selectedRow - targetRow === 1) {
                             console.log('tá em cima');
-                        } else if (selectedRow - nextRow === -1) {
+                            self.swap('up', selectedElemPos, targetElemPos);
+                        } else if (selectedRow - targetRow === -1) {
                             console.log('tá embaixo');
+                            self.swap('down', selectedElemPos, targetElemPos);
                         }
                     }
                     $(ELEMS).removeClass('selected');
                 } else {
                     $(this).addClass('selected');
                     selectedElemPos = self.findElemByDom(this);
+                    // ox, oy;
+                    // tx, ty;
+                    // Math.abs(ox-tx) <= 1;
+                    // Math.abs(oy-ty) <= 1;
+
+                    // elem.animate({left: ox-tx*width+'px', top: oy-ty*height+'px'})
+
                 }
             });
+        },
+
+        swap: function (direction, selected, target, rollback) {
+            var selectedElem = this.getElem(selected[0], selected[1]),
+                targetElem = this.getElem(target[0], target[1]);
+
+            this.updatePosElem(selectedElem, target[0], target[1]);
+            this.updatePosElem(targetElem, selected[0], selected[1]);
+
+            switch (direction) {
+                case 'left':
+                    selectedElem.dom.animate({left: '-='+ (ELEM_SIZE+ELEM_MARGIN) +'px'}, 300);
+                    targetElem.dom.animate({left: '+='+ (ELEM_SIZE+ELEM_MARGIN) +'px'}, 300);
+                    break;
+                case 'right':
+                    selectedElem.dom.animate({left: '+='+ (ELEM_SIZE+ELEM_MARGIN) +'px'}, 300);
+                    targetElem.dom.animate({left: '-='+ (ELEM_SIZE+ELEM_MARGIN) +'px'}, 300);
+                    break;
+                case 'up':
+                    selectedElem.dom.animate({top: '-='+ (ELEM_SIZE+ELEM_MARGIN) +'px'}, 300);
+                    targetElem.dom.animate({top: '+='+ (ELEM_SIZE+ELEM_MARGIN) +'px'}, 300);
+                    break;
+                case 'down':
+                    selectedElem.dom.animate({top: '+='+ (ELEM_SIZE+ELEM_MARGIN) +'px'}, 300);
+                    targetElem.dom.animate({top: '-='+ (ELEM_SIZE+ELEM_MARGIN) +'px'}, 300);
+                    break;
+            }
+            if (!rollback) {
+                if (!this._checkEntireGrid()) {
+                    this.swap(direction, selected, target, true);
+                }
+            }
         },
 
         findElemByDom: function (dom) {
