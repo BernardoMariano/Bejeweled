@@ -9,6 +9,7 @@ const COL_MAX = 9;
 const ROW_MAX = 9;
 
 const GRID = '#grid';
+const POINTS = '#points';
 
 const ELEMS = GRID + ' div';
 const ELEM_SIZE = 35; //pixels
@@ -66,6 +67,7 @@ $(function(){
     Bejeweled = {
         init: function () {
             this.grid   = [];
+            this.points = 0;
 
             this.prepareElems();
             this.createGrid();
@@ -328,7 +330,8 @@ $(function(){
         },
 
         popRow: function (row, col_start, col_end) {
-            var self = this;
+            var self = this,
+                count = 1 + col_end - col_start;
             for (var col = col_start; col <= col_end; col++) {
                 this.getElem(col, row).pop(col, row);
 
@@ -346,6 +349,7 @@ $(function(){
                     self.getElem(col, row_index).fall();
                 }
             }
+            this.addPoints(count);
             setTimeout(function () {
                 // console.log('');
                 // console.log('reChecking entire grid...');
@@ -380,6 +384,7 @@ $(function(){
                     // console.log('created '+col, row);
                 }
             }
+            this.addPoints(count);
             // console.log('');
             // console.log('falling col '+col+', from row '+row_end+' to 1');
             this.fallColumn(col, row_end, count);
@@ -397,6 +402,21 @@ $(function(){
                     self._checkEntireGrid();
                 }, FALL_SPEED * 3);
             }, FALL_SPEED / 2);
+        },
+
+        addPoints: function (count) {
+            var points = 0;
+            if (count == 3) {
+                points = 30;
+            }
+            if (count == 4) {
+                points = 60;
+            }
+            if (count == 5) {
+                points = 120;
+            }
+            this.points += points;
+            $(POINTS).html(this.points);
         }
     };
 
